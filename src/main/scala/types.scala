@@ -17,6 +17,7 @@ import Scalaz._
   */
 object exercise1 {
   sealed trait Figure
+  case class Circle(r: Double) extends Figure
 }
 
 /**
@@ -24,15 +25,16 @@ object exercise1 {
   */
 object exercise2 {
   /** Maybe is of kind *. Change it to be * -> * so that it can hold values of any type */
-  sealed trait Maybe
-  case class Just(value: String)
-  case object Empty
+  sealed trait Maybe[+A]
+  case class Just[A](value: A) extends Maybe[A]
+  case object Empty extends Maybe[Nothing]
 
-  val gotIt = Just("hello")
-  val nah = Empty
-  // val gotNum = Just(10)
-  // case class User(name: String)
-  // val maybeUser = Just(User("Swift"))
+  val gotIt: Maybe[String] = Just("hello")
+  val nah: Maybe[String] = Empty
+
+   val gotNum = Just(10)
+   case class User(name: String)
+   val maybeUser = Just(User("Swift"))
 }
 
 /**
@@ -44,6 +46,16 @@ object exercise3 {
   def func2[F[_], A](f: F[A]): F[A] = f
   def func3[E[_, _], A, B](e: E[A, B]): E[A, B] = e
   def func4[T[_[_]], F[_]](t: T[F]): T[F] = t
+
+  func1[String]("blah")
+  func2[List, String](List[String]("1"))
+  func3[Map, String, Int](Map("a" -> 5))
+
+  trait Head[L[_]] {
+    def head[A](la: L[A]): Option[A]
+  }
+
+
 }
 
 
@@ -52,11 +64,16 @@ object exercise4 {
     def value: F[String]
   }
 
-  /*
+  new Example[List] {
+    override def value: List[String] = List("a")
+  }
+
   new Example[_] { // <-- ???
     def value: Either[String, Int] = Right(2)
   }
-  */
+
+
+
 }
 
 /** Explore the mysteries of magic box */

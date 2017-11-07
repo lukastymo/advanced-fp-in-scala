@@ -26,6 +26,13 @@ object exercise1 {
   case object Dislike extends Attitude
 
   // preference(Eggs)
+  def preferences(groceries: Groceries): Attitude = groceries match {
+    case Vegetables => Love
+    case Fruits => Like
+    case Meat => Neutral
+    case Dairy => Neutral
+    case Eggs => Love
+  }
 }
 
 object exercise2 {
@@ -43,15 +50,17 @@ object exercise2 {
   /** And apply some discounts from time to time */
   val discount: Item => Double = {
     case Apple => 0.1
+    case Orange => 0.0
   }
 
-  /** 
+  /**
     * Write function finalPrice that will calculate the final price for the item by
-    * applying dicount to initial price
+    * applying discount to initial price
     * 
     * Call the function for both Apples and Oranges. Is everything in order? How can you fix it?
     */
-  val finalPrice: Item => Double = ???
+//  def finalPrice(item: Item) = (1.0 - discount(item)) * price(item)
+  val finalPrice: Item => Double = (item: Item) => (1.0 - discount(item)) * price(item)
   finalPrice(Apple)
   finalPrice(Orange)
 }
@@ -69,10 +78,11 @@ object exercise3 {
 
   val prize: Attitude => Groceries = {
     case Love => Vegetables
-    case _    => Eggs
+    case Like | Neutral | Dislike => Eggs
   }
 
-  val prizeForComment: String => Groceries = ???
+//  val prizeForComment: String => Groceries = prize compose rateComment
+  val prizeForComment: String => Groceries = rateComment andThen prize
 }
 
 /**
@@ -103,23 +113,35 @@ object exercise4 {
   /** Schrodinger is a crazy fellow. He closed his cat in a box!
     * Now Schrodinger does not know whether the cat is dead or alive but he seems happy about it.
     */
-  class SchrodingerBox(private val cat: Cat)
+  class SchrodingerBox(private val cat: Cat) {
+
+    /**
+      * He has no intentions of revealing if the cat is dead or alive, but if it is, Schrodinger
+      * would like to feed it and pet it from time to time.
+      *
+      * Your goals:
+      * 1. Fulfil mad scientist dream and write a method (in SchrodingerBox) called "interact"
+      * that allows applying all `Cat => Cat` functions on a cat (as long as the cat is alive)
+      * 2. Try running your function with `pet` and `hiss` functions.
+      * 3. What about feed function? Can we still feed a cat within a SchrodingerBox?
+      */
+    def interact(f: Cat => Cat): SchrodingerBox = if (cat.alive) SchrodingerBox(f(cat)) else this
+
+    override def toString: String = cat.toString
+  }
+
   object SchrodingerBox {
     def apply(cat: Cat): SchrodingerBox =
       if(cat.happiness <= 3)
         new SchrodingerBox(cat.copy(alive = false))
       else new SchrodingerBox(cat)
   }
-  /**
-    * He has no intentions of revealing if the cat is dead or alive, but if it is, Schrodinger
-    * would like to feed it and pet it from time to time.
-    * 
-    * Your goals:
-    * 1. Fulfil mad scientist dream and write a method (in SchrodingerBox) called "interact"
-    * that allows applying all `Cat => Cat` functions on a cat (as long as the cat is alive)
-    * 2. Try running running your function with `pet` and `hiss` functions.
-    * 3. What about feed function? Can we still feed a cat within a SchrodingerBox?
-    */
+
+  SchrodingerBox(Cat(10, alive = true)).interact(pet)
+  SchrodingerBox(Cat(10, alive = true)).interact(pet).interact(hiss)
+  SchrodingerBox(Cat(10, alive = true)).interact(pet).interact(hiss).interact(pet)
+
+  SchrodingerBox(Cat(10, alive = true)).interact(feed(_, Meat))
 }
 
 object exercise5 {
@@ -159,7 +181,12 @@ object exercise5 {
     * 3. return a function that will take an Item as parameter and return a final price for
     *    that item as a result
     */
-  val createCheckout: (Item => Double) => (Item => Double) => (Item => Double) = ???
+  val createCheckout: (Item => Double) => (Item => Double) => (Item => Double) = {
+    (price: (Item => Double)) =>
+      (discount: (Item => Double)) =>
+        item => (1 - discount(item)) * price(item)
+
+  }
 
   val checkout: Item => Double = createCheckout(priceLondon)(mondayDiscount)
 }
@@ -168,7 +195,9 @@ object exercise5 {
   * Implement compose, curry, uncurry
   */
 object exercise6 {
-  def compose[A, B, C](f: A => B, g: B => C): A => C = ???
-  def curry[A, B, C](f: (A, B) => C): A => B => C = ???
-  def uncurry[A, B, C](f:  A => B => C): (A, B) => C = ???
+  def compose[A, B, C](f: A => B, g: B => C): A => C = a => g(f(a))
+
+  def curry[A, B, C](f: (A, B) => C): A => B => C = a => f(a, _)
+
+  def uncurry[A, B, C](f: A => B => C): (A, B) => C = (a, b) => f(a)(b)
 }
